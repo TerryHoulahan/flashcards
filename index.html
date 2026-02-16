@@ -1,117 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Flashcards</title>
 
 <style>
-body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #111;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        overflow: hidden;
+    }
 
-.header {
-    padding: 10px;
-    text-align: center;
-    background: #222;
-    display: flex;
-    justify-content: space-between;
-}
+    .card {
+        width: 90%;
+        max-width: 600px;
+        height: 60vh;
+        background: #222;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 2rem;
+        padding: 20px;
+        cursor: pointer;
+        user-select: none;
+        transition: transform 0.2s ease;
+    }
 
-button {
-    padding: 10px;
-    font-size: 14px;
-    cursor: pointer;
-}
+    .controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
 
-.main {
-    flex: 1;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+    button {
+        padding: 10px 15px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+    }
 
-.card {
-    width: 90%;
-    max-width: 500px;
-    height: 60vh;
-    border: 2px solid #444;
-    border-radius: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 20px;
-    font-size: 22px;
-    background: #1c1c1c;
-}
+    .counter {
+        margin-top: 10px;
+        font-size: 14px;
+        opacity: 0.7;
+    }
 
-.controls {
-    padding: 10px;
-    text-align: center;
-    background: #222;
-}
+    .build {
+        position: fixed;
+        bottom: 5px;
+        right: 10px;
+        font-size: 12px;
+        opacity: 0.4;
+    }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-    <button onclick="toggleEdit()">Edit</button>
+<div class="card" id="card">Loading...</div>
+
+<div class="counter" id="counter"></div>
+
+<div class="controls">
+    <button onclick="previousCard()">Previous</button>
+    <button onclick="nextCard()">Next</button>
+    <button onclick="shuffleCards()">Shuffle</button>
     <button onclick="addCard()">Add Card</button>
 </div>
 
-<div class="main">
-    <div class="card" onclick="flipCard()" id="card"></div>
-</div>
-
-<div class="controls">
-    <button onclick="nextCard()">Next</button>
+<div class="build">
+    BUILD: 2026-02-16-v2
 </div>
 
 <script>
 let cards = JSON.parse(localStorage.getItem("flashcards")) || [
-    { front: "Capital of France?", back: "Paris" }
+    { front: "Capital of France?", back: "Paris" },
+    { front: "2 + 2?", back: "4" }
 ];
 
 let current = 0;
 let showingFront = true;
-let editMode = false;
+let startX = 0;
 
-function save() {
+const cardEl = document.getElementById("card");
+const counterEl = document.getElementById("counter");
+
+function saveCards() {
     localStorage.setItem("flashcards", JSON.stringify(cards));
 }
 
 function showCard() {
-    const card = document.getElementById("card");
-
-    if (editMode) {
-        card.innerHTML = `
-            <div>
-                <div>Front:</div>
-                <input id="frontInput" value="${cards[current].front}" />
-                <div>Back:</div>
-                <input id="backInput" value="${cards[current].back}" />
-                <br><br>
-                <button onclick="saveEdit()">Save</button>
-            </div>
-        `;
+    if (cards.length === 0) {
+        cardEl.innerText = "No cards. Add one.";
+        counterEl.innerText = "";
         return;
     }
 
-    card.innerText = showingFront
+    cardEl.innerText = showingFront
         ? cards[current].front
         : cards[current].back;
+
+    counterEl.innerText = `Card ${current + 1} of ${cards.length}`;
 }
 
 function flipCard() {
-    if (editMode) return;
     showingFront = !showingFront;
     showCard();
 }
@@ -122,25 +127,53 @@ function nextCard() {
     showCard();
 }
 
-function toggleEdit() {
-    editMode = !editMode;
+function previousCard() {
+    current = (current - 1 + cards.length) % cards.length;
+    showingFront = true;
     showCard();
 }
 
-function saveEdit() {
-    cards[current].front = document.getElementById("frontInput").value;
-    cards[current].back = document.getElementById("backInput").value;
-    save();
-    editMode = false;
+function shuffleCards() {
+    for (let i = cards.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [cards[i], cards[j]] = [cards[j], cards[i]];
+    }
+    current = 0;
+    showingFront = true;
+    saveCards();
     showCard();
 }
 
 function addCard() {
-    cards.push({ front: "New Question", back: "New Answer" });
+    let front = prompt("Front (question):");
+    if (!front) return;
+
+    let back = prompt("Back (answer):");
+    if (!back) return;
+
+    cards.push({ front, back });
+    saveCards();
     current = cards.length - 1;
-    save();
+    showingFront = true;
     showCard();
 }
+
+cardEl.addEventListener("click", flipCard);
+
+cardEl.addEventListener("touchstart", e => {
+    startX = e.touches[0].clientX;
+});
+
+cardEl.addEventListener("touchend", e => {
+    let endX = e.changedTouches[0].clientX;
+    let diff = endX - startX;
+
+    if (diff > 50) {
+        previousCard();
+    } else if (diff < -50) {
+        nextCard();
+    }
+});
 
 showCard();
 </script>
