@@ -1,0 +1,77 @@
+
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Flashcards</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: 50px;
+    }
+
+    .card {
+        width: 300px;
+        height: 200px;
+        border: 2px solid #333;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        cursor: pointer;
+        font-size: 20px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+</style>
+</head>
+<body>
+
+<div class="card" onclick="flipCard()" id="card">
+    Click to start
+</div>
+
+<button onclick="nextCard()">Next</button>
+
+<script>
+let cards = [
+    { front: "Capital of France?", back: "Paris" },
+    { front: "2 + 2?", back: "4" }
+];
+
+let current = 0;
+let showingFront = true;
+
+function showCard() {
+    let card = document.getElementById("card");
+    card.innerText = showingFront
+        ? cards[current].front
+        : cards[current].back;
+}
+
+function flipCard() {
+    showingFront = !showingFront;
+    showCard();
+}
+
+function nextCard() {
+    current = (current + 1) % cards.length;
+    showingFront = true;
+    showCard();
+}
+
+showCard();
+</script>
+
+</body>
+</html>
