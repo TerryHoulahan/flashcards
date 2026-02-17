@@ -1,187 +1,4 @@
-
-
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flashcards</title>
-
-<style>
-    body {
-        margin: 0;
-        font-family: Arial, sans-serif;
-        background: #111;
-        color: white;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        overflow: hidden;
-    }
-
-    .card {
-        width: 90%;
-        max-width: 600px;
-        height: 60vh;
-        background: #222;
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        font-size: 2rem;
-        padding: 20px;
-        cursor: pointer;
-        user-select: none;
-        transition: transform 0.2s ease;
-    }
-
-    .controls {
-        margin-top: 20px;
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-
-    button {
-        padding: 10px 15px;
-        font-size: 16px;
-        border-radius: 8px;
-        border: none;
-        cursor: pointer;
-    }
-
-    .counter {
-        margin-top: 10px;
-        font-size: 14px;
-        opacity: 0.7;
-    }
-
-    .build {
-        position: fixed;
-        bottom: 5px;
-        right: 10px;
-        font-size: 12px;
-        opacity: 0.4;
-    }
-</style>
-</head>
-
-<body>
-
-<div class="card" id="card">Loading...</div>
-
-<div class="counter" id="counter"></div>
-
-<div class="controls">
-    <button onclick="previousCard()">Previous</button>
-    <button onclick="nextCard()">Next</button>
-    <button onclick="shuffleCards()">Shuffle</button>
-    <button onclick="addCard()">Add Card</button>
-</div>
-
-<div class="build">
-    BUILD: 2026-02-16-v2
-</div>
-
-<script>
-let cards = JSON.parse(localStorage.getItem("flashcards")) || [
-    { front: "Capital of France?", back: "Paris" },
-    { front: "2 + 2?", back: "4" }
-];
-
-let current = 0;
-let showingFront = true;
-let startX = 0;
-
-const cardEl = document.getElementById("card");
-const counterEl = document.getElementById("counter");
-
-function saveCards() {
-    localStorage.setItem("flashcards", JSON.stringify(cards));
-}
-
-function showCard() {
-    if (cards.length === 0) {
-        cardEl.innerText = "No cards. Add one.";
-        counterEl.innerText = "";
-        return;
-    }
-
-    cardEl.innerText = showingFront
-        ? cards[current].front
-        : cards[current].back;
-
-    counterEl.innerText = `Card ${current + 1} of ${cards.length}`;
-}
-
-function flipCard() {
-    showingFront = !showingFront;
-    showCard();
-}
-
-function nextCard() {
-    current = (current + 1) % cards.length;
-    showingFront = true;
-    showCard();
-}
-
-function previousCard() {
-    current = (current - 1 + cards.length) % cards.length;
-    showingFront = true;
-    showCard();
-}
-
-function shuffleCards() {
-    for (let i = cards.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [cards[i], cards[j]] = [cards[j], cards[i]];
-    }
-    current = 0;
-    showingFront = true;
-    saveCards();
-    showCard();
-}
-
-function addCard() {
-    let front = prompt("Front (question):");
-    if (!front) return;
-
-    let back = prompt("Back (answer):");
-    if (!back) return;
-
-    cards.push({ front, back });
-    saveCards();
-    current = cards.length - 1;
-    showingFront = true;
-    showCard();
-}
-
-cardEl.addEventListener("click", flipCard);
-
-cardEl.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-});
-
-cardEl.addEventListener("touchend", e => {
-    let endX = e.changedTouches[0].clientX;
-    let diff = endX - startX;
-
-    if (diff > 50) {
-        previousCard();
-    } else if (diff < -50) {
-        nextCard();
-    }
-});
-
-showCard();
-</script>
-
-</body>
-</htm<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -191,97 +8,60 @@ showCard();
 <style>
 body {
     margin: 0;
-    font-family: system-ui, sans-serif;
-    background: #0f0f0f;
+    background: #121212;
     color: white;
+    font-family: system-ui;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
-    overflow: hidden;
+}
+
+.app {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
 }
 
 .card {
-    width: 92%;
-    max-width: 700px;
-    height: 65vh;
-    background: #1c1c1c;
+    width: 100%;
+    height: 40vh;
+    background: #1e1e1e;
     border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: clamp(1.5rem, 5vw, 2.5rem);
-    padding: 30px;
-    cursor: pointer;
+    font-size: 6vw;
+    padding: 20px;
+    box-sizing: border-box;
     user-select: none;
-    transition: transform 0.2s ease;
 }
 
-.card:active {
-    transform: scale(0.97);
+.counter {
+    text-align: center;
+    margin: 15px 0;
+    opacity: 0.6;
 }
 
 .controls {
-    margin-top: 20px;
     display: flex;
-    gap: 10px;
     flex-wrap: wrap;
+    gap: 10px;
     justify-content: center;
 }
 
 button {
-    padding: 10px 15px;
-    font-size: 15px;
+    padding: 10px 16px;
     border-radius: 10px;
     border: none;
-    cursor: pointer;
-    background: #333;
+    background: #2a2a2a;
     color: white;
-}
-
-button:hover {
-    background: #444;
-}
-
-.counter {
-    margin-top: 12px;
-    font-size: 14px;
-    opacity: 0.6;
-}
-
-.modal {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    display: none;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background: #1c1c1c;
-    padding: 20px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.modal input, .modal textarea {
-    padding: 8px;
-    border-radius: 6px;
-    border: none;
     font-size: 14px;
 }
 
 .build {
-    position: fixed;
-    bottom: 5px;
-    right: 10px;
+    text-align: center;
+    margin-top: 20px;
     font-size: 12px;
     opacity: 0.4;
 }
@@ -290,57 +70,44 @@ button:hover {
 
 <body>
 
-<div class="card" id="card">Loading...</div>
+<div class="app">
 
-<div class="counter" id="counter"></div>
+    <div class="card" id="card">Loading...</div>
 
-<div class="controls">
-    <button onclick="previousCard()">Previous</button>
-    <button onclick="nextCard()">Next</button>
-    <button onclick="shuffleCards()">Shuffle</button>
-    <button onclick="addCard()">Add</button>
-    <button onclick="deleteCard()">Delete</button>
-</div>
+    <div class="counter" id="counter"></div>
 
-<div class="modal" id="modal">
-    <div class="modal-content">
-        <label>Front</label>
-        <textarea id="editFront"></textarea>
-        <label>Back</label>
-        <textarea id="editBack"></textarea>
-        <button onclick="saveEdit()">Save</button>
-        <button onclick="closeModal()">Cancel</button>
+    <div class="controls">
+        <button onclick="previousCard()">Previous</button>
+        <button onclick="nextCard()">Next</button>
+        <button onclick="shuffleCards()">Shuffle</button>
+        <button onclick="addCard()">Add</button>
+        <button onclick="deleteCard()">Delete</button>
     </div>
-</div>
 
-<div class="build">
-    BUILD: 2026-02-17-v3
+    <div class="build">BUILD: 2026-02-17-v5</div>
+
 </div>
 
 <script>
-const defaultCards = [
+
+let cards = JSON.parse(localStorage.getItem("cards")) || [
     { front: "Capital of France?", back: "Paris" },
     { front: "2 + 2?", back: "4" }
 ];
 
-let cards = JSON.parse(localStorage.getItem("flashcards")) || defaultCards;
-
 let current = 0;
 let showingFront = true;
-let startX = 0;
-let holdTimer = null;
 
 const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
-const modal = document.getElementById("modal");
 
-function saveCards() {
-    localStorage.setItem("flashcards", JSON.stringify(cards));
+function save() {
+    localStorage.setItem("cards", JSON.stringify(cards));
 }
 
 function showCard() {
     if (cards.length === 0) {
-        cardEl.innerText = "No cards. Add one.";
+        cardEl.innerText = "No cards";
         counterEl.innerText = "";
         return;
     }
@@ -358,14 +125,12 @@ function flipCard() {
 }
 
 function nextCard() {
-    if (cards.length === 0) return;
     current = (current + 1) % cards.length;
     showingFront = true;
     showCard();
 }
 
 function previousCard() {
-    if (cards.length === 0) return;
     current = (current - 1 + cards.length) % cards.length;
     showingFront = true;
     showCard();
@@ -375,75 +140,48 @@ function shuffleCards() {
     cards.sort(() => Math.random() - 0.5);
     current = 0;
     showingFront = true;
-    saveCards();
+    save();
     showCard();
 }
 
 function addCard() {
-    cards.push({ front: "New Question", back: "New Answer" });
-    current = cards.length - 1;
-    showingFront = true;
-    saveCards();
-    showCard();
+    let front = prompt("Front:");
+    let back = prompt("Back:");
+    if (front && back) {
+        cards.push({ front, back });
+        save();
+        showCard();
+    }
 }
 
 function deleteCard() {
     if (cards.length === 0) return;
-    cards.splice(current, 1);
-    current = Math.max(0, current - 1);
-    saveCards();
-    showCard();
-}
-
-function openModal() {
-    document.getElementById("editFront").value = cards[current].front;
-    document.getElementById("editBack").value = cards[current].back;
-    modal.style.display = "flex";
-}
-
-function closeModal() {
-    modal.style.display = "none";
-}
-
-function saveEdit() {
-    cards[current].front = document.getElementById("editFront").value;
-    cards[current].back = document.getElementById("editBack").value;
-    saveCards();
-    closeModal();
-    showCard();
+    if (confirm("Delete this card?")) {
+        cards.splice(current, 1);
+        if (current >= cards.length) current = 0;
+        save();
+        showCard();
+    }
 }
 
 cardEl.addEventListener("click", flipCard);
 
+let startX = 0;
+
 cardEl.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX;
-    holdTimer = setTimeout(openModal, 600);
 });
 
 cardEl.addEventListener("touchend", e => {
-    clearTimeout(holdTimer);
-    let endX = e.changedTouches[0].clientX;
-    let diff = endX - startX;
-
+    let diff = e.changedTouches[0].clientX - startX;
     if (diff > 50) previousCard();
-    else if (diff < -50) nextCard();
-});
-
-cardEl.addEventListener("mousedown", () => {
-    holdTimer = setTimeout(openModal, 600);
-});
-
-cardEl.addEventListener("mouseup", () => {
-    clearTimeout(holdTimer);
+    if (diff < -50) nextCard();
 });
 
 showCard();
+
 </script>
 
 </body>
-</html>l>
-
-
-
-
+</html>
 
