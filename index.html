@@ -34,15 +34,20 @@ body {
     background: #1e1e1e;
     border-radius: 20px;
     display: flex;
-    align-items: center;
+    align-items: flex-start;        /* start from top */
     justify-content: center;
     text-align: center;
-    font-size: clamp(1.5rem, 6vw, 2.5rem);
-    padding: 20px;
+    font-size: clamp(1.2rem, 5vw, 2.3rem);
+    padding: 25px;
     box-sizing: border-box;
     user-select: none;
     transition: transform 0.25s ease;
+
+    overflow-y: auto;               /* scroll if long */
+    white-space: pre-wrap;          /* preserve line breaks */
+    word-break: break-word;         /* prevent overflow */
 }
+
 
 .counter {
     text-align: center;
