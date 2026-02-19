@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Flashcards</title>
 
 <style>
@@ -14,47 +14,48 @@ body {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    height: 100vh;
     overflow: hidden;
-    touch-action: manipulation;
+    touch-action: pan-y;
 }
 
 .app {
     width: 100%;
     max-width: 600px;
     padding: 20px;
-    box-sizing: border-box;
+}
+
+.card-wrapper {
+    overflow: hidden;
 }
 
 .card {
     width: 100%;
-    height: 55vh;
+    height: 45vh;
     background: #1e1e1e;
     border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: clamp(1.5rem, 5vw, 2.4rem);
-    padding: 25px;
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    padding: 20px;
     box-sizing: border-box;
     user-select: none;
-    position: relative;
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
 }
 
 .counter {
     text-align: center;
-    margin: 15px 0;
+    margin: 12px 0;
     opacity: 0.6;
 }
 
 .controls {
     display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
     justify-content: center;
+    gap: 10px;
+    margin-top: 10px;
+    flex-wrap: wrap;
 }
 
 button {
@@ -67,7 +68,15 @@ button {
 }
 
 button:active {
-    background: #3a3a3a;
+    transform: scale(0.95);
+}
+
+.add-btn {
+    background: #b00020;
+}
+
+.add-btn:hover {
+    background: #d00030;
 }
 
 .modal {
@@ -90,11 +99,12 @@ button:active {
     gap: 10px;
 }
 
-.modal textarea {
-    padding: 8px;
-    border-radius: 6px;
+textarea {
+    padding: 10px;
+    border-radius: 8px;
     border: none;
     font-size: 14px;
+    resize: none;
 }
 
 .build {
@@ -110,21 +120,34 @@ button:active {
 
 <div class="app">
 
+<div class="card-wrapper">
     <div class="card" id="card">Loading...</div>
+</div>
 
-    <div class="counter" id="counter"></div>
+<div class="counter" id="counter"></div>
 
-    <div class="controls">
-        <button onclick="previousCard()">Previous</button>
-        <button onclick="nextCard()">Next</button>
-        <button onclick="shuffleCards()">Shuffle</button>
-        <button onclick="openModal()">Edit</button>
-    </div>
+<!-- TOP ROW -->
+<div class="controls">
+    <button onclick="previousCard()">Previous</button>
+    <button onclick="shuffleCards()">Shuffle</button>
+    <button onclick="nextCard()">Next</button>
+</div>
 
-    <div class="build">For my Wife, with Love — Husband of yours 💛</div>
+<!-- BOTTOM ROW -->
+<div class="controls">
+    <button onclick="deleteCard()">Delete</button>
+    <button onclick="openEdit()">Edit</button>
+    <button class="add-btn" onclick="addCard()">❤️ Add</button>
+</div>
+
+<div class="build">
+    BUILD: 2026-02-17-v8  
+    <br>For my Wife, with Love Husband of yours ❤️
+</div>
 
 </div>
 
+<!-- MODAL -->
 <div class="modal" id="modal">
     <div class="modal-content">
         <label>Front</label>
@@ -134,7 +157,7 @@ button:active {
         <textarea id="editBack"></textarea>
 
         <button onclick="saveEdit()">Save</button>
-        <button id="clearBtn" onclick="clearOrUndo()">Clear</button>
+        <button id="clearBtn" onclick="clearField()">Clear</button>
         <button onclick="closeModal()">Cancel</button>
     </div>
 </div>
@@ -149,17 +172,12 @@ let cards = JSON.parse(localStorage.getItem("cards")) || [
 let current = 0;
 let showingFront = true;
 
-let startX = 0;
-let isDragging = false;
-
-let previousFront = "";
-let previousBack = "";
-let cleared = false;
-
 const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
 const modal = document.getElementById("modal");
 const clearBtn = document.getElementById("clearBtn");
+
+let lastCleared = null;
 
 function save() {
     localStorage.setItem("cards", JSON.stringify(cards));
@@ -204,10 +222,26 @@ function shuffleCards() {
     showCard();
 }
 
-function openModal() {
+function addCard() {
+    cards.push({ front: "", back: "" });
+    current = cards.length - 1;
+    showingFront = true;
+    save();
+    showCard();
+    openEdit();
+}
+
+function deleteCard() {
+    if (!confirm("Delete this card?")) return;
+    cards.splice(current, 1);
+    if (current >= cards.length) current = 0;
+    save();
+    showCard();
+}
+
+function openEdit() {
     document.getElementById("editFront").value = cards[current].front;
     document.getElementById("editBack").value = cards[current].back;
-    cleared = false;
     clearBtn.innerText = "Clear";
     modal.style.display = "flex";
 }
@@ -224,64 +258,52 @@ function saveEdit() {
     showCard();
 }
 
-function clearOrUndo() {
-    const frontField = document.getElementById("editFront");
-    const backField = document.getElementById("editBack");
-
-    if (!cleared) {
-        previousFront = frontField.value;
-        previousBack = backField.value;
-        frontField.value = "";
-        backField.value = "";
+function clearField() {
+    if (clearBtn.innerText === "Clear") {
+        lastCleared = {
+            front: document.getElementById("editFront").value,
+            back: document.getElementById("editBack").value
+        };
+        document.getElementById("editFront").value = "";
+        document.getElementById("editBack").value = "";
         clearBtn.innerText = "Undo";
-        cleared = true;
     } else {
-        frontField.value = previousFront;
-        backField.value = previousBack;
+        document.getElementById("editFront").value = lastCleared.front;
+        document.getElementById("editBack").value = lastCleared.back;
         clearBtn.innerText = "Clear";
-        cleared = false;
     }
 }
 
-/* ----- SWIPE + TAP LOGIC ----- */
+cardEl.addEventListener("click", flipCard);
+
+/* CARD-ONLY SWIPE */
+let startX = 0;
+let currentX = 0;
+let isDragging = false;
 
 cardEl.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX;
-    isDragging = false;
+    isDragging = true;
 });
 
 cardEl.addEventListener("touchmove", e => {
-    let diff = e.touches[0].clientX - startX;
-    if (Math.abs(diff) > 10) {
-        isDragging = true;
-        cardEl.style.transform = `translateX(${diff}px)`;
-    }
+    if (!isDragging) return;
+    currentX = e.touches[0].clientX;
+    let diff = currentX - startX;
+    cardEl.style.transform = `translateX(${diff}px)`;
 });
 
 cardEl.addEventListener("touchend", e => {
+    isDragging = false;
     let diff = e.changedTouches[0].clientX - startX;
 
-    cardEl.style.transform = "";
-
-    if (isDragging && Math.abs(diff) > 60) {
-        if (diff > 0) previousCard();
-        else nextCard();
-    } else {
-        flipCard();
+    if (diff > 80) {
+        previousCard();
+    } else if (diff < -80) {
+        nextCard();
     }
 
-    isDragging = false;
-});
-
-/* Disable double-tap zoom */
-let lastTap = 0;
-cardEl.addEventListener("touchend", function (e) {
-    const currentTime = new Date().getTime();
-    const tapLength = currentTime - lastTap;
-    if (tapLength < 300 && tapLength > 0) {
-        e.preventDefault();
-    }
-    lastTap = currentTime;
+    cardEl.style.transform = "translateX(0)";
 });
 
 showCard();
