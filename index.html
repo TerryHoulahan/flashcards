@@ -33,21 +33,24 @@ body {
     height: 45vh;
     background: #1e1e1e;
     border-radius: 20px;
+
     display: flex;
-    align-items: flex-start;        /* start from top */
-    justify-content: center;
+    align-items: center;          /* center vertically when short */
+    justify-content: center;      /* center horizontally */
     text-align: center;
+
     font-size: clamp(1.2rem, 5vw, 2.3rem);
     padding: 25px;
     box-sizing: border-box;
     user-select: none;
     transition: transform 0.25s ease;
 
-    overflow-y: auto;               /* scroll if long */
-    white-space: pre-wrap;          /* preserve line breaks */
-    word-break: break-word;         /* prevent overflow */
-}
+    overflow-y: auto;             /* scroll if too long */
+    overflow-x: hidden;
 
+    white-space: pre-wrap;        /* preserve line breaks */
+    word-break: break-word;       /* prevent overflow */
+}
 
 .counter {
     text-align: center;
