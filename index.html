@@ -10,7 +10,7 @@ body {
     margin: 0;
     background: #121212;
     color: white;
-    font-family: system-ui;
+    font-family: system-ui, sans-serif;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -18,23 +18,28 @@ body {
 
 .app {
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
     padding: 20px;
 }
 
 .card {
     width: 100%;
-    height: 40vh;
+    height: 55vh;
     background: #1e1e1e;
-    border-radius: 20px;
+    border-radius: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: 6vw;
-    padding: 20px;
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    padding: 30px;
     box-sizing: border-box;
     user-select: none;
+    transition: transform 0.15s ease;
+}
+
+.card:active {
+    transform: scale(0.97);
 }
 
 .counter {
@@ -57,11 +62,45 @@ button {
     background: #2a2a2a;
     color: white;
     font-size: 14px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #3a3a3a;
+}
+
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 400px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.modal textarea {
+    width: 100%;
+    padding: 8px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+    resize: vertical;
 }
 
 .build {
     text-align: center;
-    margin-top: 20px;
+    margin-top: 25px;
     font-size: 12px;
     opacity: 0.4;
 }
@@ -81,11 +120,28 @@ button {
         <button onclick="nextCard()">Next</button>
         <button onclick="shuffleCards()">Shuffle</button>
         <button onclick="addCard()">Add</button>
+        <button onclick="editCard()">Edit</button>
         <button onclick="deleteCard()">Delete</button>
     </div>
 
-    <div class="build">BUILD: 2026-02-17-v5</div>
+    <div class="build">
+        BUILD: 2026-02-17-final<br>
+        For my Wife, with Love — Husband of yours ❤️
+    </div>
 
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-content">
+        <label>Front</label>
+        <textarea id="editFront"></textarea>
+
+        <label>Back</label>
+        <textarea id="editBack"></textarea>
+
+        <button onclick="saveEdit()">Save</button>
+        <button onclick="closeModal()">Cancel</button>
+    </div>
 </div>
 
 <script>
@@ -97,9 +153,11 @@ let cards = JSON.parse(localStorage.getItem("cards")) || [
 
 let current = 0;
 let showingFront = true;
+let startX = 0;
 
 const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
+const modal = document.getElementById("modal");
 
 function save() {
     localStorage.setItem("cards", JSON.stringify(cards));
@@ -107,7 +165,7 @@ function save() {
 
 function showCard() {
     if (cards.length === 0) {
-        cardEl.innerText = "No cards";
+        cardEl.innerText = "No cards available";
         counterEl.innerText = "";
         return;
     }
@@ -125,12 +183,14 @@ function flipCard() {
 }
 
 function nextCard() {
+    if (cards.length === 0) return;
     current = (current + 1) % cards.length;
     showingFront = true;
     showCard();
 }
 
 function previousCard() {
+    if (cards.length === 0) return;
     current = (current - 1 + cards.length) % cards.length;
     showingFront = true;
     showCard();
@@ -145,35 +205,54 @@ function shuffleCards() {
 }
 
 function addCard() {
-    let front = prompt("Front:");
-    let back = prompt("Back:");
-    if (front && back) {
-        cards.push({ front, back });
-        save();
-        showCard();
-    }
+    cards.push({ front: "New Question", back: "New Answer" });
+    current = cards.length - 1;
+    showingFront = true;
+    save();
+    showCard();
 }
 
 function deleteCard() {
     if (cards.length === 0) return;
-    if (confirm("Delete this card?")) {
-        cards.splice(current, 1);
-        if (current >= cards.length) current = 0;
-        save();
-        showCard();
-    }
+    if (!confirm("Delete this card?")) return;
+
+    cards.splice(current, 1);
+    if (current >= cards.length) current = 0;
+    save();
+    showCard();
+}
+
+function editCard() {
+    if (cards.length === 0) return;
+
+    document.getElementById("editFront").value = cards[current].front;
+    document.getElementById("editBack").value = cards[current].back;
+
+    modal.style.display = "flex";
+}
+
+function closeModal() {
+    modal.style.display = "none";
+}
+
+function saveEdit() {
+    cards[current].front = document.getElementById("editFront").value;
+    cards[current].back = document.getElementById("editBack").value;
+    save();
+    closeModal();
+    showCard();
 }
 
 cardEl.addEventListener("click", flipCard);
 
-let startX = 0;
-
+// Swipe support
 cardEl.addEventListener("touchstart", e => {
     startX = e.touches[0].clientX;
 });
 
 cardEl.addEventListener("touchend", e => {
     let diff = e.changedTouches[0].clientX - startX;
+
     if (diff > 50) previousCard();
     if (diff < -50) nextCard();
 });
@@ -184,5 +263,4 @@ showCard();
 
 </body>
 </html>
-
 
