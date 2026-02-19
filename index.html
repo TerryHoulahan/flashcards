@@ -11,14 +11,13 @@ body {
     background: #121212;
     color: white;
     font-family: system-ui;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    overflow: hidden; /* prevents page drag */
 }
 
 .app {
     width: 100%;
     max-width: 600px;
+    margin: auto;
     padding: 20px;
 }
 
@@ -35,6 +34,7 @@ body {
     padding: 20px;
     box-sizing: border-box;
     user-select: none;
+    touch-action: none; /* prevents page swipe */
     transition: transform 0.25s ease;
 }
 
@@ -131,13 +131,13 @@ textarea {
         <label>Back</label>
         <textarea id="editBack"></textarea>
         <button onclick="saveEdit()">Save</button>
+        <button onclick="clearEdit()">Clear</button>
         <button onclick="closeModal()">Cancel</button>
     </div>
 </div>
 
 <script>
 
-// ---------- DATA ----------
 let cards = JSON.parse(localStorage.getItem("cards")) || [
     { front: "Capital of France?", back: "Paris" },
     { front: "2 + 2?", back: "4" }
@@ -150,12 +150,10 @@ const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
 const modal = document.getElementById("modal");
 
-// ---------- STORAGE ----------
 function save() {
     localStorage.setItem("cards", JSON.stringify(cards));
 }
 
-// ---------- RENDER ----------
 function showCard() {
     if (cards.length === 0) {
         cardEl.innerText = "No cards";
@@ -170,7 +168,6 @@ function showCard() {
     counterEl.innerText = `Card ${current + 1} of ${cards.length}`;
 }
 
-// ---------- CARD ACTIONS ----------
 function flipCard() {
     showingFront = !showingFront;
     showCard();
@@ -201,7 +198,7 @@ function addCard() {
     current = cards.length - 1;
     showingFront = true;
     save();
-    openEdit();
+    openEdit(true); // new card mode
 }
 
 function deleteCard() {
@@ -212,13 +209,24 @@ function deleteCard() {
     showCard();
 }
 
-// ---------- EDIT ----------
-function openEdit() {
-    // Auto-clear so typing starts fresh
-    document.getElementById("editFront").value = "";
-    document.getElementById("editBack").value = "";
+// ---------- EDIT LOGIC ----------
+function openEdit(isNew = false) {
+    if (!isNew) {
+        // editing existing → preload text
+        document.getElementById("editFront").value = cards[current].front;
+        document.getElementById("editBack").value = cards[current].back;
+    } else {
+        // new card → blank
+        document.getElementById("editFront").value = "";
+        document.getElementById("editBack").value = "";
+    }
 
     modal.style.display = "flex";
+}
+
+function clearEdit() {
+    document.getElementById("editFront").value = "";
+    document.getElementById("editBack").value = "";
 }
 
 function closeModal() {
@@ -233,7 +241,7 @@ function saveEdit() {
     showCard();
 }
 
-// ---------- SWIPE (Premium Drag) ----------
+// ---------- SMOOTH CARD DRAG ----------
 let startX = 0;
 let currentX = 0;
 let dragging = false;
@@ -261,14 +269,14 @@ cardEl.addEventListener("touchend", () => {
     cardEl.style.transition = "transform 0.25s ease";
 
     if (diff > 100) {
-        cardEl.style.transform = "translateX(100%)";
+        cardEl.style.transform = "translateX(120%)";
         setTimeout(() => {
             previousCard();
             cardEl.style.transform = "translateX(0)";
         }, 200);
     }
     else if (diff < -100) {
-        cardEl.style.transform = "translateX(-100%)";
+        cardEl.style.transform = "translateX(-120%)";
         setTimeout(() => {
             nextCard();
             cardEl.style.transform = "translateX(0)";
