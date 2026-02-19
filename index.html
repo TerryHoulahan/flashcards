@@ -10,7 +10,7 @@ body {
     margin: 0;
     background: #121212;
     color: white;
-    font-family: system-ui, sans-serif;
+    font-family: system-ui;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -18,28 +18,24 @@ body {
 
 .app {
     width: 100%;
-    max-width: 700px;
+    max-width: 600px;
     padding: 20px;
 }
 
 .card {
     width: 100%;
-    height: 55vh;
+    height: 45vh;
     background: #1e1e1e;
-    border-radius: 24px;
+    border-radius: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     text-align: center;
-    font-size: clamp(1.5rem, 5vw, 2.5rem);
-    padding: 30px;
+    font-size: clamp(1.5rem, 6vw, 2.5rem);
+    padding: 20px;
     box-sizing: border-box;
     user-select: none;
-    transition: transform 0.15s ease;
-}
-
-.card:active {
-    transform: scale(0.97);
+    transition: transform 0.25s ease;
 }
 
 .counter {
@@ -62,11 +58,10 @@ button {
     background: #2a2a2a;
     color: white;
     font-size: 14px;
-    cursor: pointer;
 }
 
 button:hover {
-    background: #3a3a3a;
+    background: #333;
 }
 
 .modal {
@@ -79,9 +74,9 @@ button:hover {
 }
 
 .modal-content {
-    background: #1e1e1e;
+    background: #1c1c1c;
     padding: 20px;
-    border-radius: 16px;
+    border-radius: 12px;
     width: 90%;
     max-width: 400px;
     display: flex;
@@ -89,18 +84,17 @@ button:hover {
     gap: 10px;
 }
 
-.modal textarea {
-    width: 100%;
+textarea {
     padding: 8px;
-    border-radius: 8px;
+    border-radius: 6px;
     border: none;
     font-size: 14px;
-    resize: vertical;
+    resize: none;
 }
 
 .build {
     text-align: center;
-    margin-top: 25px;
+    margin-top: 20px;
     font-size: 12px;
     opacity: 0.4;
 }
@@ -120,13 +114,12 @@ button:hover {
         <button onclick="nextCard()">Next</button>
         <button onclick="shuffleCards()">Shuffle</button>
         <button onclick="addCard()">Add</button>
-        <button onclick="editCard()">Edit</button>
         <button onclick="deleteCard()">Delete</button>
+        <button onclick="openEdit()">Edit</button>
     </div>
 
     <div class="build">
-        BUILD: 2026-02-17-final<br>
-        For my Wife, with Love — Husband of yours ❤️
+        For my Wife, with Love — Husband of Yours ❤️
     </div>
 
 </div>
@@ -135,10 +128,8 @@ button:hover {
     <div class="modal-content">
         <label>Front</label>
         <textarea id="editFront"></textarea>
-
         <label>Back</label>
         <textarea id="editBack"></textarea>
-
         <button onclick="saveEdit()">Save</button>
         <button onclick="closeModal()">Cancel</button>
     </div>
@@ -146,6 +137,7 @@ button:hover {
 
 <script>
 
+// ---------- DATA ----------
 let cards = JSON.parse(localStorage.getItem("cards")) || [
     { front: "Capital of France?", back: "Paris" },
     { front: "2 + 2?", back: "4" }
@@ -153,19 +145,20 @@ let cards = JSON.parse(localStorage.getItem("cards")) || [
 
 let current = 0;
 let showingFront = true;
-let startX = 0;
 
 const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
 const modal = document.getElementById("modal");
 
+// ---------- STORAGE ----------
 function save() {
     localStorage.setItem("cards", JSON.stringify(cards));
 }
 
+// ---------- RENDER ----------
 function showCard() {
     if (cards.length === 0) {
-        cardEl.innerText = "No cards available";
+        cardEl.innerText = "No cards";
         counterEl.innerText = "";
         return;
     }
@@ -177,20 +170,19 @@ function showCard() {
     counterEl.innerText = `Card ${current + 1} of ${cards.length}`;
 }
 
+// ---------- CARD ACTIONS ----------
 function flipCard() {
     showingFront = !showingFront;
     showCard();
 }
 
 function nextCard() {
-    if (cards.length === 0) return;
     current = (current + 1) % cards.length;
     showingFront = true;
     showCard();
 }
 
 function previousCard() {
-    if (cards.length === 0) return;
     current = (current - 1 + cards.length) % cards.length;
     showingFront = true;
     showCard();
@@ -205,28 +197,26 @@ function shuffleCards() {
 }
 
 function addCard() {
-    cards.push({ front: "New Question", back: "New Answer" });
+    cards.push({ front: "", back: "" });
     current = cards.length - 1;
     showingFront = true;
     save();
-    showCard();
+    openEdit();
 }
 
 function deleteCard() {
     if (cards.length === 0) return;
-    if (!confirm("Delete this card?")) return;
-
     cards.splice(current, 1);
     if (current >= cards.length) current = 0;
     save();
     showCard();
 }
 
-function editCard() {
-    if (cards.length === 0) return;
-
-    document.getElementById("editFront").value = cards[current].front;
-    document.getElementById("editBack").value = cards[current].back;
+// ---------- EDIT ----------
+function openEdit() {
+    // Auto-clear so typing starts fresh
+    document.getElementById("editFront").value = "";
+    document.getElementById("editBack").value = "";
 
     modal.style.display = "flex";
 }
@@ -243,18 +233,50 @@ function saveEdit() {
     showCard();
 }
 
+// ---------- SWIPE (Premium Drag) ----------
+let startX = 0;
+let currentX = 0;
+let dragging = false;
+
 cardEl.addEventListener("click", flipCard);
 
-// Swipe support
 cardEl.addEventListener("touchstart", e => {
+    dragging = true;
     startX = e.touches[0].clientX;
+    cardEl.style.transition = "none";
 });
 
-cardEl.addEventListener("touchend", e => {
-    let diff = e.changedTouches[0].clientX - startX;
+cardEl.addEventListener("touchmove", e => {
+    if (!dragging) return;
+    currentX = e.touches[0].clientX;
+    let diff = currentX - startX;
+    cardEl.style.transform = `translateX(${diff}px)`;
+});
 
-    if (diff > 50) previousCard();
-    if (diff < -50) nextCard();
+cardEl.addEventListener("touchend", () => {
+    if (!dragging) return;
+    dragging = false;
+
+    let diff = currentX - startX;
+    cardEl.style.transition = "transform 0.25s ease";
+
+    if (diff > 100) {
+        cardEl.style.transform = "translateX(100%)";
+        setTimeout(() => {
+            previousCard();
+            cardEl.style.transform = "translateX(0)";
+        }, 200);
+    }
+    else if (diff < -100) {
+        cardEl.style.transform = "translateX(-100%)";
+        setTimeout(() => {
+            nextCard();
+            cardEl.style.transform = "translateX(0)";
+        }, 200);
+    }
+    else {
+        cardEl.style.transform = "translateX(0)";
+    }
 });
 
 showCard();
