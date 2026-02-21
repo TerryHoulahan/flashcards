@@ -18,15 +18,22 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.9.0/firebase-firestore.js";
 
 /* =========================
-   UTIL
+   CONSTANTS
 ========================= */
 
-const fantasyIcons = ["🌙","✨","🦋","🌹","💖","🪄","🌸","🕊️","📜","🔮","🐉","💎","🔥","🌊"];
+const fantasyIcons = [
+  "🌙","✨","🦋","🌹","💖","🪄","🌸",
+  "🕊️","📜","🔮","🧝‍♀️","🐉","💎","🔥","🌊"
+];
 
 const uuid = () => crypto.randomUUID();
 const now = () => Date.now();
 
-function safeParseArray(v) {
+/* =========================
+   LOCAL STATE
+========================= */
+
+function safeParse(v) {
   try {
     const parsed = JSON.parse(v);
     return Array.isArray(parsed) ? parsed : [];
@@ -35,17 +42,24 @@ function safeParseArray(v) {
   }
 }
 
-/* =========================
-   LOCAL STATE
-========================= */
+let cards = safeParse(localStorage.getItem("cards"));
+let decks = safeParse(localStorage.getItem("decks"));
 
-let cards = safeParseArray(localStorage.getItem("cards"));
-let decks = safeParseArray(localStorage.getItem("decks"));
+let currentDeckId = null;
+let current = 0;
+let showingFront = true;
+let currentUser = null;
+let unsubscribeDecks = null;
+let unsubscribeCards = null;
 
 function saveLocal() {
   localStorage.setItem("cards", JSON.stringify(cards));
   localStorage.setItem("decks", JSON.stringify(decks));
 }
+
+/* =========================
+   MAIN DECK GUARANTEE
+========================= */
 
 function ensureMainDeck() {
   if (!Array.isArray(decks)) decks = [];
@@ -59,74 +73,32 @@ function ensureMainDeck() {
   if (decks.length === 0) {
     decks = [{ id: uuid(), name: "Main Deck", icon: "🪄" }];
   }
+
+  if (!decks.some(d => d.name.toLowerCase() === "main deck")) {
+    decks.unshift({ id: uuid(), name: "Main Deck", icon: "🪄" });
+  }
+
+  if (!currentDeckId || !decks.some(d => d.id === currentDeckId)) {
+    currentDeckId = decks[0].id;
+  }
 }
 
 ensureMainDeck();
-
-let currentDeckId = decks[0].id;
-let current = 0;
-let showingFront = true;
-
-/* =========================
-   CARD FACTORY
-========================= */
-
-function createCard(front = "", back = "", order = 0, deckId = currentDeckId) {
-  return {
-    id: uuid(),
-    front,
-    back,
-    createdAt: now(),
-    order,
-    deckId
-  };
-}
-
-function normalizeOrdersForDeck(deckId) {
-  const deckCards = cards
-    .filter(c => c.deckId === deckId)
-    .sort((a, b) => a.order - b.order);
-
-  deckCards.forEach((c, i) => (c.order = i));
-}
-
-function migrateCards() {
-  if (!cards.length) {
-    cards = [
-      createCard("Capital of France?", "Paris", 0, currentDeckId),
-      createCard("2 + 2?", "4", 1, currentDeckId)
-    ];
-  }
-
-  const deckIds = new Set(decks.map(d => d.id));
-
-  cards = cards.map((c, idx) => ({
-    id: c?.id || uuid(),
-    front: (c?.front ?? "").toString(),
-    back: (c?.back ?? "").toString(),
-    order: Number.isFinite(c?.order) ? c.order : idx,
-    createdAt: Number.isFinite(c?.createdAt) ? c.createdAt : now(),
-    deckId: deckIds.has(c?.deckId) ? c.deckId : currentDeckId
-  }));
-
-  decks.forEach(d => normalizeOrdersForDeck(d.id));
-}
-
-migrateCards();
 saveLocal();
 
 /* =========================
    FIRESTORE
 ========================= */
 
-let currentUser = null;
-let unsubscribeDecks = null;
-let unsubscribeCards = null;
-
 async function upsertDeck(deck) {
   saveLocal();
   if (!currentUser) return;
   await setDoc(doc(db, "users", currentUser.uid, "decks", deck.id), deck);
+}
+
+async function deleteDeckRemote(deckId) {
+  if (!currentUser) return;
+  await deleteDoc(doc(db, "users", currentUser.uid, "decks", deckId));
 }
 
 async function upsertCard(card) {
@@ -135,34 +107,9 @@ async function upsertCard(card) {
   await setDoc(doc(db, "users", currentUser.uid, "cards", card.id), card);
 }
 
-async function removeCard(cardId) {
-  saveLocal();
+async function deleteCardRemote(cardId) {
   if (!currentUser) return;
   await deleteDoc(doc(db, "users", currentUser.uid, "cards", cardId));
-}
-
-async function deleteDeck(deck) {
-  if (!confirm(`Delete "${deck.name}" and all its cards?`)) return;
-
-  cards
-    .filter(c => c.deckId === deck.id)
-    .forEach(c => removeCard(c.id));
-
-  decks = decks.filter(d => d.id !== deck.id);
-
-  if (currentDeckId === deck.id) {
-    ensureMainDeck();
-    currentDeckId = decks[0].id;
-  }
-
-  saveLocal();
-
-  if (currentUser) {
-    await deleteDoc(doc(db, "users", currentUser.uid, "decks", deck.id));
-  }
-
-  renderDecks();
-  showCard();
 }
 
 /* =========================
@@ -171,25 +118,18 @@ async function deleteDeck(deck) {
 
 const cardEl = document.getElementById("card");
 const counterEl = document.getElementById("counter");
-
+const deckDropdown = document.getElementById("deckDropdown");
 const currentDeckNameEl = document.getElementById("currentDeckName");
 const currentDeckIconEl = document.getElementById("currentDeckIcon");
 
 /* =========================
-   UI
+   CARD HELPERS
 ========================= */
 
 function getDeckCards(deckId = currentDeckId) {
   return cards
     .filter(c => c.deckId === deckId)
-    .sort((a, b) => a.order - b.order);
-}
-
-function setDeckHeader(deckId = currentDeckId) {
-  const deck = decks.find(d => d.id === deckId);
-  if (!deck) return;
-  currentDeckNameEl.innerText = deck.name;
-  currentDeckIconEl.innerText = deck.icon;
+    .sort((a,b)=>a.order-b.order);
 }
 
 function showCard() {
@@ -205,79 +145,144 @@ function showCard() {
 
   const c = deckCards[current];
   cardEl.innerText = showingFront ? c.front : c.back;
-  counterEl.innerText = `Card ${current + 1} of ${deckCards.length}`;
+  counterEl.innerText = `Card ${current+1} of ${deckCards.length}`;
+}
+
+function setDeckHeader(deckId) {
+  const deck = decks.find(d => d.id === deckId);
+  if (!deck) return;
+
+  currentDeckNameEl.innerText = deck.name;
+  currentDeckIconEl.innerText = deck.icon;
 }
 
 /* =========================
-   DECK RENDER (UPDATED)
+   DECK ACTIONS
 ========================= */
 
 function renameDeck(deck) {
-  const newName = prompt("Rename deck:", deck.name);
-  if (!newName) return;
+  const name = prompt("Rename deck:", deck.name);
+  if (!name) return;
 
-  deck.name = newName.trim() || deck.name;
+  deck.name = name.trim();
   upsertDeck(deck);
   renderDecks();
 }
 
-function renderDecks() {
-  ensureMainDeck();
-
-  const dropdown = document.getElementById("deckDropdown");
-  dropdown.innerHTML = "";
-
-  if (!decks.some(d => d.id === currentDeckId)) {
-    currentDeckId = decks[0].id;
+function deleteDeck(deck) {
+  if (deck.name === "Main Deck") {
+    alert("Main Deck cannot be deleted.");
+    return;
   }
 
-  setDeckHeader(currentDeckId);
+  if (!confirm(`Delete "${deck.name}" and its cards?`)) return;
+
+  cards = cards.filter(c => c.deckId !== deck.id);
+  decks = decks.filter(d => d.id !== deck.id);
+
+  deleteDeckRemote(deck.id);
+
+  ensureMainDeck();
+  renderDecks();
+  showCard();
+}
+
+function addDeck() {
+  const name = prompt("Deck name?");
+  if (!name) return;
+
+  const deck = {
+    id: uuid(),
+    name: name.trim(),
+    icon: fantasyIcons[Math.floor(Math.random()*fantasyIcons.length)]
+  };
+
+  decks.push(deck);
+  upsertDeck(deck);
+  renderDecks();
+}
+
+/* =========================
+   ICON PICKER
+========================= */
+
+function openIconPicker(deck) {
+  const modal = document.getElementById("iconModal");
+  const grid = document.getElementById("iconGrid");
+
+  grid.innerHTML = "";
+
+  fantasyIcons.forEach(icon => {
+    const span = document.createElement("span");
+    span.textContent = icon;
+    span.onclick = () => {
+      deck.icon = icon;
+      upsertDeck(deck);
+      modal.style.display = "none";
+      renderDecks();
+    };
+    grid.appendChild(span);
+  });
+
+  modal.style.display = "flex";
+}
+
+function closeIconModal() {
+  document.getElementById("iconModal").style.display = "none";
+}
+
+/* =========================
+   RENDER DECKS
+========================= */
+
+function renderDecks() {
+  ensureMainDeck();
+  deckDropdown.innerHTML = "";
 
   decks.forEach(deck => {
     const item = document.createElement("div");
     item.className = "deck-item";
 
-    const left = document.createElement("span");
-    left.innerText = `${deck.icon} ${deck.name}`;
+    const name = document.createElement("span");
+    name.innerText = `${deck.icon} ${deck.name}`;
+    name.onclick = () => {
+      currentDeckId = deck.id;
+      current = 0;
+      showingFront = true;
+      setDeckHeader(deck.id);
+      showCard();
+    };
 
-    const renameBtn = document.createElement("button");
-    renameBtn.innerText = "✏️";
-    renameBtn.onclick = e => {
+    const editBtn = document.createElement("button");
+    editBtn.innerText = "✏️";
+    editBtn.onclick = (e) => {
       e.stopPropagation();
       renameDeck(deck);
     };
 
     const iconBtn = document.createElement("button");
     iconBtn.innerText = "🎨";
-    iconBtn.onclick = e => {
+    iconBtn.onclick = (e) => {
       e.stopPropagation();
       openIconPicker(deck);
     };
 
     const deleteBtn = document.createElement("button");
     deleteBtn.innerText = "🗑";
-    deleteBtn.onclick = e => {
+    deleteBtn.onclick = (e) => {
       e.stopPropagation();
       deleteDeck(deck);
     };
 
-    item.appendChild(left);
-    item.appendChild(renameBtn);
+    item.appendChild(name);
+    item.appendChild(editBtn);
     item.appendChild(iconBtn);
     item.appendChild(deleteBtn);
 
-    item.onclick = () => {
-      currentDeckId = deck.id;
-      current = 0;
-      showingFront = true;
-      setDeckHeader(deck.id);
-      showCard();
-      dropdown.classList.remove("open");
-    };
-
-    dropdown.appendChild(item);
+    deckDropdown.appendChild(item);
   });
 
+  setDeckHeader(currentDeckId);
   saveLocal();
 }
 
@@ -286,6 +291,7 @@ function renderDecks() {
 ========================= */
 
 onAuthStateChanged(auth, user => {
+
   if (unsubscribeDecks) unsubscribeDecks();
   if (unsubscribeCards) unsubscribeCards();
 
@@ -293,8 +299,6 @@ onAuthStateChanged(auth, user => {
 
   if (!user) {
     ensureMainDeck();
-    migrateCards();
-    saveLocal();
     renderDecks();
     showCard();
     return;
@@ -306,14 +310,13 @@ onAuthStateChanged(auth, user => {
   );
 
   unsubscribeDecks = onSnapshot(decksRef, snap => {
-    const remoteDecks = snap.docs.map(d => d.data());
-
-    if (remoteDecks.length) {
-      decks = remoteDecks;
+    const remote = snap.docs.map(d=>d.data());
+    if (remote.length) {
+      decks = remote;
+      ensureMainDeck();
     } else {
-      decks.forEach(d => upsertDeck(d));
+      decks.forEach(d=>upsertDeck(d));
     }
-
     renderDecks();
   });
 
@@ -324,17 +327,23 @@ onAuthStateChanged(auth, user => {
   );
 
   unsubscribeCards = onSnapshot(cardsRef, snap => {
-    const remoteCards = snap.docs.map(d => d.data());
-
-    if (remoteCards.length) {
-      cards = remoteCards;
+    const remote = snap.docs.map(d=>d.data());
+    if (remote.length) {
+      cards = remote;
     } else {
-      cards.forEach(c => upsertCard(c));
+      cards.forEach(c=>upsertCard(c));
     }
-
     showCard();
   });
 });
+
+/* =========================
+   GLOBALS
+========================= */
+
+window.addDeck = addDeck;
+window.openIconPicker = openIconPicker;
+window.closeIconModal = closeIconModal;
 
 /* =========================
    BOOT
