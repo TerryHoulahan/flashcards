@@ -219,17 +219,6 @@ function showCard() {
   counterEl.innerText = `Card ${current + 1} of ${deckCards.length}`;
 }
 
-/* ---- TAP TO FLIP ---- */
-
-function flipCard() {
-  showingFront = !showingFront;
-  showCard();
-}
-
-if (cardEl) {
-  cardEl.addEventListener("click", flipCard);
-}
-
 function setDeckHeader(deckId) {
   const deck = decks.find(d => d.id === deckId);
   if (!deck) return;
@@ -687,9 +676,9 @@ function closeModal() {
   modal.style.display = "none";
 }
 
-function commitEditFields() {
+function saveEdit() {
   const deckCards = getDeckCards();
-  if (!deckCards.length) return null;
+  if (!deckCards.length) return;
 
   const card = deckCards[current];
 
@@ -697,12 +686,6 @@ function commitEditFields() {
   card.back = editBack.value.trim();
 
   upsertCard(card);
-  return card;
-}
-
-function saveEdit() {
-  const card = commitEditFields();
-  if (!card) return;
 
   closeModal();
   showCard();
@@ -719,41 +702,23 @@ function applyOrder() {
   const deckCards = getDeckCards();
   if (!deckCards.length) return;
 
-  let newPosition = parseInt(orderInput.value) - 1;
+  const newPosition = parseInt(orderInput.value) - 1;
   if (isNaN(newPosition)) return;
-
-  if (newPosition < 0) newPosition = 0;
-  if (newPosition >= deckCards.length)
-    newPosition = deckCards.length - 1;
 
   const card = deckCards[current];
 
-  // remove card from its deck
-  const remaining = deckCards.filter(c => c.id !== card.id);
+  const filtered = deckCards.filter(c => c.id !== card.id);
+  filtered.splice(newPosition, 0, card);
 
-  // insert at new position
-  remaining.splice(newPosition, 0, card);
-
-  // update order values
-  remaining.forEach((c, i) => {
+  filtered.forEach((c, i) => {
     c.order = i;
-    upsertCard(c); // keeps firestore in sync
+    upsertCard(c);
   });
 
   current = newPosition;
-  showingFront = true;
-
-  closeModal();
   showCard();
+  closeModal();
 }
-
-// expose modal actions for index.html inline onclick handlers
-window.openEdit = openEdit;
-window.saveEdit = saveEdit;
-window.clearField = clearField;
-window.toggleOrderUI = toggleOrderUI;
-window.applyOrder = applyOrder;
-window.closeModal = closeModal;
 
 /* ---- DELETE CONFIRM ---- */
 
@@ -800,60 +765,4 @@ function deleteCard() {
 
 window.deleteCard = deleteCard;
 window.undoDelete = undoDelete;
-/* =========================
-   MODAL BUTTON FIX (GLOBAL + CLEAR/UNDO)
-   Append-only block
-========================= */
 
-let lastCleared = null;
-let clearIsUndo = false;
-
-function resetClearState() {
-  clearIsUndo = false;
-  lastCleared = null;
-  const btn = document.getElementById("clearBtn");
-  if (btn) btn.innerText = "Clear";
-}
-
-// Ensure clear state resets whenever modal opens/closes/saves
-const _openEdit = openEdit;
-openEdit = function () {
-  resetClearState();
-  return _openEdit();
-};
-
-const _closeModal = closeModal;
-closeModal = function () {
-  resetClearState();
-  return _closeModal();
-};
-
-// Clear <-> Undo toggle for edit modal
-function clearField() {
-  const front = document.getElementById("editFront");
-  const back = document.getElementById("editBack");
-  const btn = document.getElementById("clearBtn");
-  if (!front || !back || !btn) return;
-
-  if (!clearIsUndo) {
-    lastCleared = { front: front.value, back: back.value };
-    front.value = "";
-    back.value = "";
-    btn.innerText = "Undo";
-    clearIsUndo = true;
-  } else {
-    if (lastCleared) {
-      front.value = lastCleared.front;
-      back.value = lastCleared.back;
-    }
-    btn.innerText = "Clear";
-    clearIsUndo = false;
-  }
-}
-
-// Export ALL modal functions so inline onclick works
-window.openEdit = openEdit;
-window.closeModal = closeModal;
-window.toggleOrderUI = toggleOrderUI;
-window.applyOrder = applyOrder;
-window.clearField = clearField;
