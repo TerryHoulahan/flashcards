@@ -20,7 +20,7 @@ body {
 
 .app {
     width: 100%;
-    max-width: 600px;
+    max-width: 720px;
     padding: 20px;
 }
 
@@ -43,7 +43,7 @@ body {
     padding: 25px;
     box-sizing: border-box;
     user-select: none;
-    transition: transform 0.25s ease;
+    transition: transform 0.25s ease, opacity 0.2s ease;
 
     overflow-y: auto;             /* scroll if too long */
     overflow-x: hidden;
@@ -114,19 +114,260 @@ textarea {
     font-size: 14px;
     resize: none;
 }
-
+input {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+}
 .build {
     text-align: center;
     margin-top: 20px;
     font-size: 12px;
     opacity: 0.4;
 }
+.account-btn {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    font-size: 18px;
+    background: #2a2a2a;
+    color: white;
+}
+
+.account-btn:active {
+    transform: scale(0.95);
+}
+/* =========================
+   DECK BAR
+========================= */
+
+.deck-bar {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.deck-pill {
+    background: linear-gradient(145deg, #1a1a1a, #242424);
+    padding: 9px 22px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.deck-pill:hover {
+    background: linear-gradient(145deg, #202020, #2b2b2b);
+box-shadow:
+    0 6px 18px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(255,255,255,0.05),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+.deck-pill:active {
+    transform: scale(0.97);
+}
+
+.deck-arrow {
+    opacity: 0.6;
+    font-size: 14px;
+}
+
+#currentDeckName {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+/* =========================
+   PREMIUM ICON POLISH
+========================= */
+
+#currentDeckIcon {
+    font-size: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+
+    text-shadow:
+        0 0 6px rgba(255,255,255,0.25),
+        0 0 12px rgba(255,255,255,0.08);
+}
+
+.deck-pill {
+    backdrop-filter: blur(6px);
+}
+
+.deck-pill:hover #currentDeckIcon {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
+.deck-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-size: 15px;
+}
+
+.deck-item:hover {
+    background: rgba(255,255,255,0.06);
+    transform: translateX(6px);
+}
+
+.deck-item.active {
+    background: rgba(176,0,32,0.25);
+    box-shadow:
+        inset 0 0 0 1px rgba(176,0,32,0.45),
+        0 0 18px rgba(176,0,32,0.15);
+}
+
+/* Smooth dropdown animation */
+.deck-dropdown {
+    transform-origin: top;
+}
+
+.deck-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.add-deck-btn {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: 500;
+    background: linear-gradient(145deg, #1a1a1a, #242424);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    box-shadow:
+        0 4px 12px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+.add-deck-btn:hover {
+    background: linear-gradient(145deg, #222, #2e2e2e);
+    box-shadow:
+        0 6px 16px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+.add-deck-btn:active {
+    transform: scale(0.94);
+}
+.deck-dropdown {
+    max-width: 420px;
+    margin: 0 auto 20px auto;
+    background: linear-gradient(145deg, #181818, #222);
+    border-radius: 16px;
+    padding: 10px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.55);
+    border: 1px solid rgba(255,255,255,0.04);
+
+    opacity: 0;
+    transform: translateY(-10px);
+    pointer-events: none;
+    transition: all 0.25s ease;
+}
+
+.deck-dropdown.open {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* ========================= */
+/* PREMIUM DECK ITEMS */
+/* ========================= */
+
+.deck-item {
+    padding: 10px 14px;
+    border-radius: 12px;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+
+.deck-item:hover {
+    background: rgba(255,255,255,0.05);
+    transform: translateX(4px);
+}
+
+.deck-item.active {
+    background: rgba(176,0,32,0.2);
+    box-shadow: inset 0 0 0 1px rgba(176,0,32,0.4);
+}
+
+/* =========================
+   ICON PICKER MODAL
+========================= */
+
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 12px;
+    font-size: 26px;
+    margin: 15px 0;
+}
+
+.icon-grid span {
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 12px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.icon-grid span:hover {
+    background: rgba(255,255,255,0.1);
+    transform: scale(1.25);
+}
+
 </style>
+
 </head>
 
 <body>
 
+<button id="accountBtn" class="account-btn">👤</button>
+
 <div class="app">
+
+<!-- DECK BAR -->
+<div class="deck-bar">
+    <div class="deck-pill" onclick="toggleDeckMenu()">
+        <span id="currentDeckIcon">🪄</span>
+        <span id="currentDeckName">Main Deck</span>
+        <span class="deck-arrow">▾</span>
+    </div>
+
+    <button class="add-deck-btn" onclick="addDeck()">+</button>
+</div>
+
+    <div id="deckDropdown" class="deck-dropdown">
+
+        <!-- Deck items will go here -->
+</div>
 
 <div class="card-wrapper">
     <div class="card" id="card">Loading...</div>
@@ -164,160 +405,49 @@ textarea {
         <label>Back</label>
         <textarea id="editBack"></textarea>
 
-        <button onclick="saveEdit()">Save</button>
-        <button id="clearBtn" onclick="clearField()">Clear</button>
-        <button onclick="closeModal()">Cancel</button>
+    <button onclick="saveEdit()">Save</button>
+<button id="clearBtn" onclick="clearField()">Clear</button>
+
+<button onclick="toggleOrderUI()">Order</button>
+
+<div id="orderSection" style="display:none;">
+    <input type="number" id="orderInput" min="1" />
+    <button onclick="applyOrder()">Apply</button>
+</div>
+
+<button onclick="closeModal()">Cancel</button>
     </div>
 </div>
 
-<script>
+<!-- ACCOUNT MODAL -->
+<div class="modal" id="accountModal">
+    <div class="modal-content">
+                <h3>Account</h3>
 
-let cards = JSON.parse(localStorage.getItem("cards")) || [
-    { front: "Capital of France?", back: "Paris" },
-    { front: "2 + 2?", back: "4" }
-];
+        <div id="accountStatus">
+            Not logged in
+        </div>
 
-let current = 0;
-let showingFront = true;
+        <input type="email" id="emailInput" placeholder="Email" />
+        <input type="password" id="passwordInput" placeholder="Password" />
 
-const cardEl = document.getElementById("card");
-const counterEl = document.getElementById("counter");
-const modal = document.getElementById("modal");
-const clearBtn = document.getElementById("clearBtn");
+        <button id="loginBtn">Login</button>
+        <button id="registerBtn">Register</button>
+        <button id="logoutBtn" style="display:none;">Logout</button>
 
-let lastCleared = null;
+        <button onclick="closeAccountModal()">Close</button>
+    </div>
+</div>
 
-function save() {
-    localStorage.setItem("cards", JSON.stringify(cards));
-}
+<!-- ICON PICKER MODAL -->
+<div class="modal" id="iconModal">
+  <div class="modal-content">
+    <h3>Select an Icon</h3>
+    <div id="iconGrid" class="icon-grid"></div>
+    <button onclick="closeIconModal()">Cancel</button>
+  </div>
+</div>
 
-function showCard() {
-    if (cards.length === 0) {
-        cardEl.innerText = "No cards";
-        counterEl.innerText = "";
-        return;
-    }
-
-    cardEl.innerText = showingFront
-        ? cards[current].front
-        : cards[current].back;
-
-    counterEl.innerText = `Card ${current + 1} of ${cards.length}`;
-}
-
-function flipCard() {
-    showingFront = !showingFront;
-    showCard();
-}
-
-function nextCard() {
-    current = (current + 1) % cards.length;
-    showingFront = true;
-    showCard();
-}
-
-function previousCard() {
-    current = (current - 1 + cards.length) % cards.length;
-    showingFront = true;
-    showCard();
-}
-
-function shuffleCards() {
-    cards.sort(() => Math.random() - 0.5);
-    current = 0;
-    showingFront = true;
-    save();
-    showCard();
-}
-
-function addCard() {
-    cards.push({ front: "", back: "" });
-    current = cards.length - 1;
-    showingFront = true;
-    save();
-    showCard();
-    openEdit();
-}
-
-function deleteCard() {
-    if (!confirm("Delete this card?")) return;
-    cards.splice(current, 1);
-    if (current >= cards.length) current = 0;
-    save();
-    showCard();
-}
-
-function openEdit() {
-    document.getElementById("editFront").value = cards[current].front;
-    document.getElementById("editBack").value = cards[current].back;
-    clearBtn.innerText = "Clear";
-    modal.style.display = "flex";
-}
-
-function closeModal() {
-    modal.style.display = "none";
-}
-
-function saveEdit() {
-    cards[current].front = document.getElementById("editFront").value;
-    cards[current].back = document.getElementById("editBack").value;
-    save();
-    closeModal();
-    showCard();
-}
-
-function clearField() {
-    if (clearBtn.innerText === "Clear") {
-        lastCleared = {
-            front: document.getElementById("editFront").value,
-            back: document.getElementById("editBack").value
-        };
-        document.getElementById("editFront").value = "";
-        document.getElementById("editBack").value = "";
-        clearBtn.innerText = "Undo";
-    } else {
-        document.getElementById("editFront").value = lastCleared.front;
-        document.getElementById("editBack").value = lastCleared.back;
-        clearBtn.innerText = "Clear";
-    }
-}
-
-cardEl.addEventListener("click", flipCard);
-
-/* CARD-ONLY SWIPE */
-let startX = 0;
-let currentX = 0;
-let isDragging = false;
-
-cardEl.addEventListener("touchstart", e => {
-    startX = e.touches[0].clientX;
-    isDragging = true;
-});
-
-cardEl.addEventListener("touchmove", e => {
-    if (!isDragging) return;
-    currentX = e.touches[0].clientX;
-    let diff = currentX - startX;
-    cardEl.style.transform = `translateX(${diff}px)`;
-});
-
-cardEl.addEventListener("touchend", e => {
-    isDragging = false;
-    let diff = e.changedTouches[0].clientX - startX;
-
-    if (diff > 80) {
-        previousCard();
-    } else if (diff < -80) {
-        nextCard();
-    }
-
-    cardEl.style.transform = "translateX(0)";
-});
-
-showCard();
-
-</script>
-
+<script type="module" src="app.js"></script>
 </body>
 </html>
-
