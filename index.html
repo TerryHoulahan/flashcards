@@ -11,9 +11,12 @@ body {
     background: #121212;
     color: white;
     font-family: system-ui;
+
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;   /* vertical center */
+    align-items: center;       /* horizontal center */
+
+    min-height: 100vh;         /* full viewport */
     overflow: hidden;
     touch-action: pan-y;
 }
@@ -237,11 +240,6 @@ box-shadow:
         0 0 18px rgba(176,0,32,0.15);
 }
 
-/* Smooth dropdown animation */
-.deck-dropdown {
-    transform-origin: top;
-}
-
 .deck-item {
     display: flex;
     align-items: center;
@@ -275,9 +273,16 @@ box-shadow:
 .add-deck-btn:active {
     transform: scale(0.94);
 }
+
 .deck-dropdown {
+    position: absolute;
+    top: 110px;              /* adjust if needed */
+    left: 50%;
+    transform: translateX(-50%);
+
+    width: 90%;
     max-width: 420px;
-    margin: 0 auto 20px auto;
+
     background: linear-gradient(145deg, #181818, #222);
     border-radius: 16px;
     padding: 10px;
@@ -285,14 +290,13 @@ box-shadow:
     border: 1px solid rgba(255,255,255,0.04);
 
     opacity: 0;
-    transform: translateY(-10px);
     pointer-events: none;
-    transition: all 0.25s ease;
+    transition: opacity 0.25s ease;
+    z-index: 1000;
 }
 
 .deck-dropdown.open {
     opacity: 1;
-    transform: translateY(0);
     pointer-events: auto;
 }
 

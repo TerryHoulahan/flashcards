@@ -50,6 +50,7 @@ let current = 0;
 let showingFront = true;
 
 let currentUser = null;
+let authReady = false;
 let unsubscribeDecks = null;
 let unsubscribeCards = null;
 
@@ -545,6 +546,7 @@ onAuthStateChanged(auth, user => {
   if (unsubscribeCards) unsubscribeCards();
 
   currentUser = user;
+    authReady = true;
 
   // 🔥 UPDATE ACCOUNT UI STATE
   if (accountStatus) {
@@ -688,6 +690,12 @@ function closeModal() {
 }
 
 function commitEditFields() {
+
+  if (!authReady || !currentUser) {
+    console.warn("Auth not ready. Skipping Firestore write.");
+    return null;
+  }
+
   const deckCards = getDeckCards();
   if (!deckCards.length) return null;
 
@@ -697,6 +705,7 @@ function commitEditFields() {
   card.back = editBack.value.trim();
 
   upsertCard(card);
+
   return card;
 }
 
@@ -857,3 +866,30 @@ window.closeModal = closeModal;
 window.toggleOrderUI = toggleOrderUI;
 window.applyOrder = applyOrder;
 window.clearField = clearField;
+
+/* =========================
+   SWIPE SUPPORT (MOBILE)
+========================= */
+
+let startX = 0;
+let isDragging = false;
+
+if (cardEl) {
+  cardEl.addEventListener("touchstart", (e) => {
+    if (!e.touches || !e.touches.length) return;
+    startX = e.touches[0].clientX;
+    isDragging = true;
+  });
+
+  cardEl.addEventListener("touchend", (e) => {
+    if (!isDragging) return;
+    if (!e.changedTouches || !e.changedTouches.length) return;
+
+    const diff = e.changedTouches[0].clientX - startX;
+
+    if (diff > 80) previousCard();
+    if (diff < -80) nextCard();
+
+    isDragging = false;
+  });
+}
