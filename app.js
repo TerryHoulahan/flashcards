@@ -870,14 +870,19 @@ window.clearField = clearField;
 /* =========================
    SWIPE SUPPORT (MOBILE)
 ========================= */
-
 let startX = 0;
+let startY = 0;
 let isDragging = false;
+
+const SWIPE_THRESHOLD = 80;
+const AXIS_LOCK_THRESHOLD = 10;
 
 if (cardEl) {
   cardEl.addEventListener("touchstart", (e) => {
     if (!e.touches || !e.touches.length) return;
+
     startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
     isDragging = true;
   });
 
@@ -885,10 +890,23 @@ if (cardEl) {
     if (!isDragging) return;
     if (!e.changedTouches || !e.changedTouches.length) return;
 
-    const diff = e.changedTouches[0].clientX - startX;
+    const endX = e.changedTouches[0].clientX;
+    const endY = e.changedTouches[0].clientY;
 
-    if (diff > 80) previousCard();
-    if (diff < -80) nextCard();
+    const diffX = endX - startX;
+    const diffY = endY - startY;
+
+    // If vertical movement dominates, ignore swipe
+    if (Math.abs(diffY) > Math.abs(diffX)) {
+      isDragging = false;
+      return;
+    }
+
+    // Require meaningful horizontal movement
+    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+      if (diffX > 0) previousCard();
+      else nextCard();
+    }
 
     isDragging = false;
   });
