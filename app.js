@@ -619,27 +619,18 @@ onAuthStateChanged(auth, user => {
     unsubscribeCards = onSnapshot(
                                   cardsRef,
                                   snap => {
-                                      const remote = snap.docs.map(d => d.data()).filter(Boolean);
+                                      const remote = snap.docs.map(d => ({
+                                                                         id: d.id,
+                                                                         ...d.data()
+                                      }));
 
-                                      if (!remote.length) {
-                                          // Remote empty → push all local cards
-                                          cards.forEach(c => upsertCard(c));
-                                      } else {
-                                          // Merge local into remote by id (no destructive overwrite)
-                                          const remoteMap = new Map(remote.map(c => [c.id, c]));
-
-                                          cards.forEach(localCard => {
-                                              if (!remoteMap.has(localCard.id)) {
-                                                  upsertCard(localCard);
-                                              }
-                                          });
-
-                                          cards = remote;
-                                          saveLocal();
-                                      }
-
+                                      // Remote is authoritative once logged in. Do not re-upload missing locals here,
+                                      // otherwise deletes will be resurrected across devices.
+                                      cards = remote;
+                                      saveLocal();
                                       showCard();
                                   },
+
                                   err => {
                                       console.warn("Cards snapshot error:", err?.code || err);
                                       showCard();
@@ -720,11 +711,11 @@ function commitEditFields() {
     // Always save locally (offline-first)
     saveLocal();
 
-// Try Firestore write (upsertCard will no-op if not logged in)
-// Catch so failures are visible (rules/offline/etc.)
-upsertCard(card).catch(err => {
-    console.error("upsertCard failed:", err?.code || err);
-});
+    // Try Firestore write (upsertCard will no-op if not logged in)
+    // Catch so failures are visible (rules/offline/etc.)
+    upsertCard(card).catch(err => {
+        console.error("upsertCard failed:", err?.code || err);
+    });
 
     return card;
 }
