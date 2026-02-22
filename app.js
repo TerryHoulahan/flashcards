@@ -720,12 +720,11 @@ function commitEditFields() {
     // Always save locally (offline-first)
     saveLocal();
 
-    // Write to Firestore only if logged in
-    if (currentUser) {
-        upsertCard(card);
-    } else {
-        console.warn("No authenticated user. Saved locally only.");
-    }
+// Try Firestore write (upsertCard will no-op if not logged in)
+// Catch so failures are visible (rules/offline/etc.)
+upsertCard(card).catch(err => {
+    console.error("upsertCard failed:", err?.code || err);
+});
 
     return card;
 }
