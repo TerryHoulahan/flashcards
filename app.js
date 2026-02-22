@@ -690,12 +690,6 @@ function closeModal() {
 }
 
 function commitEditFields() {
-
-  if (!authReady || !currentUser) {
-    console.warn("Auth not ready. Skipping Firestore write.");
-    return null;
-  }
-
   const deckCards = getDeckCards();
   if (!deckCards.length) return null;
 
@@ -704,7 +698,15 @@ function commitEditFields() {
   card.front = editFront.value.trim();
   card.back = editBack.value.trim();
 
-  upsertCard(card);
+  // Always save locally (offline-first)
+  saveLocal();
+
+  // Write to Firestore only if logged in
+  if (currentUser) {
+    upsertCard(card);
+  } else {
+    console.warn("No authenticated user. Saved locally only.");
+  }
 
   return card;
 }
